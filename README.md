@@ -3,8 +3,8 @@
 
 > **Cas d'étude** : MediAI – Plateforme de santé intelligente distribuée sur 4 sites (Paris, Tunis, Montréal, Tokyo)
 
----
-
+## 🌐 Site interactif du TP
+👉 [Télécharger le TP HTML](./TP-Distributed-Databases-MediAI.html)
 ## 🎯 Objectifs pédagogiques
 
 | # | Objectif |
