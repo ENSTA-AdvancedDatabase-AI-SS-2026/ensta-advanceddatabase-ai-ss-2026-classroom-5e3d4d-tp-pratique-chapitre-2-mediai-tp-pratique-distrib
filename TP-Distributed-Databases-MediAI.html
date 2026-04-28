@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 2 – Distributed Databases Lab | MediAI · ENSTA 3A</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07192e;--bg2:#0a2040;--bg3:#0d2850;
+  --card:#0e2b52;--card2:#14366a;--card3:#1a4080;
+  --blue:#4db8ff;--blue2:#7ecfff;--cyan:#00eaff;
+  --teal:#00d4b0;--green:#30f0a0;--orange:#ffbe3d;
+  --red:#ff6b78;--purple:#c084fc;--pink:#f472b6;
+  --white:#ddf0ff;--muted:#5a9ec8;--dim:#2c5a82;
+  --border:rgba(77,184,255,.16);--border2:rgba(77,184,255,.38);
+  --glow:0 0 30px rgba(77,184,255,.28);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--white);font-family:'Sora',sans-serif;overflow-x:hidden;min-height:100vh}
+
+/* BACKGROUND */
+body::before{content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 90% 55% at 5% 8%,rgba(77,184,255,.11),transparent 60%),
+    radial-gradient(ellipse 60% 45% at 92% 88%,rgba(0,234,255,.08),transparent 58%),
+    radial-gradient(ellipse 55% 65% at 48% 52%,rgba(0,212,176,.05),transparent 68%);
+  pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(77,184,255,.032) 1px,transparent 1px),linear-gradient(90deg,rgba(77,184,255,.032) 1px,transparent 1px);
+  background-size:52px 52px;pointer-events:none;z-index:0}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:999;
+  background:rgba(7,25,46,.93);backdrop-filter:blur(22px);
+  border-bottom:1px solid var(--border);height:62px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 2rem;gap:.8rem}
+.nav-brand{font-family:'Space Mono',monospace;font-size:.82rem;font-weight:700;color:var(--cyan);letter-spacing:2px;white-space:nowrap}
+.nav-links{display:flex;gap:.25rem;flex-wrap:wrap;align-items:center}
+.nav-links a{padding:5px 11px;border-radius:18px;font-size:.76rem;font-weight:600;color:var(--muted);text-decoration:none;transition:all .22s;border:1px solid transparent;white-space:nowrap}
+.nav-links a:hover,.nav-links a.active{color:var(--white);border-color:var(--blue);background:rgba(77,184,255,.12)}
+.nav-chip{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#031120;padding:4px 14px;border-radius:18px;font-size:.7rem;font-weight:800;letter-spacing:.5px;white-space:nowrap}
+
+/* WRAPPER */
+.w{position:relative;z-index:1;padding-top:62px}
+
+/* HERO */
+#hero{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:5rem 2rem 4rem}
+.hero-tag{display:inline-flex;align-items:center;gap:.5rem;background:rgba(0,234,255,.1);border:1px solid rgba(0,234,255,.35);color:var(--cyan);padding:6px 22px;border-radius:30px;font-size:.76rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:2rem;animation:fadeUp .9s ease both}
+.pulse{width:7px;height:7px;background:var(--cyan);border-radius:50%;animation:pulseA 1.8s infinite}
+@keyframes pulseA{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.6)}}
+#hero h1{font-size:clamp(2.6rem,7vw,5.8rem);font-weight:900;line-height:1.04;background:linear-gradient(135deg,var(--white) 0%,var(--blue2) 42%,var(--cyan) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:1rem;animation:fadeUp .9s .12s ease both}
+.hero-sub{font-size:1.12rem;color:var(--muted);max-width:640px;margin:0 auto 2.8rem;line-height:1.75;animation:fadeUp .9s .22s ease both}
+.hero-chips{display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;margin-bottom:2.8rem;animation:fadeUp .9s .32s ease both}
+.chip{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:.9rem 1.6rem;text-align:left}
+.chip .cv{font-size:1.85rem;font-weight:900;background:linear-gradient(135deg,var(--blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.chip .cl{font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.hero-btns{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;animation:fadeUp .9s .42s ease both}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 30px;border-radius:30px;font-weight:700;font-size:.93rem;border:none;cursor:pointer;text-decoration:none;transition:all .3s;font-family:'Sora',sans-serif}
+.btn-p{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#031120}
+.btn-p:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(77,184,255,.42)}
+.btn-o{background:transparent;color:var(--blue2);border:2px solid rgba(77,184,255,.45)}
+.btn-o:hover{border-color:var(--blue);background:rgba(77,184,255,.1);transform:translateY(-3px)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+/* SECTIONS */
+section{padding:5rem 2rem;position:relative;z-index:1}
+.container{max-width:1120px;margin:0 auto}
+.sec-tag{font-size:.7rem;font-weight:700;letter-spacing:3.5px;text-transform:uppercase;color:var(--cyan);margin-bottom:.7rem;display:block}
+.sec-title{font-size:clamp(1.9rem,4vw,2.9rem);font-weight:900;margin-bottom:.85rem;background:linear-gradient(135deg,var(--white),var(--blue2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.12}
+.sec-desc{color:var(--muted);font-size:1rem;max-width:700px;line-height:1.78;margin-bottom:3rem}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2rem;transition:all .3s;position:relative;overflow:hidden}
+.card:hover{border-color:var(--border2);box-shadow:var(--glow);transform:translateY(-2px)}
+.card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(77,184,255,.055),transparent 60%);pointer-events:none}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.2rem}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:18px;font-size:.72rem;font-weight:700}
+.b-blue{background:rgba(77,184,255,.14);color:var(--blue2);border:1px solid rgba(77,184,255,.3)}
+.b-cyan{background:rgba(0,234,255,.11);color:var(--cyan);border:1px solid rgba(0,234,255,.28)}
+.b-green{background:rgba(48,240,160,.11);color:var(--green);border:1px solid rgba(48,240,160,.28)}
+.b-orange{background:rgba(255,190,61,.11);color:var(--orange);border:1px solid rgba(255,190,61,.28)}
+.b-purple{background:rgba(192,132,252,.11);color:var(--purple);border:1px solid rgba(192,132,252,.28)}
+.b-red{background:rgba(255,107,120,.11);color:var(--red);border:1px solid rgba(255,107,120,.28)}
+.b-teal{background:rgba(0,212,176,.11);color:var(--teal);border:1px solid rgba(0,212,176,.28)}
+
+/* CODE */
+.code-wrap{background:#030f1e;border:1px solid rgba(77,184,255,.2);border-radius:14px;overflow:hidden;margin:.8rem 0}
+.code-bar{display:flex;align-items:center;justify-content:space-between;padding:.55rem 1rem;background:rgba(77,184,255,.07);border-bottom:1px solid rgba(77,184,255,.1)}
+.code-bar span{font-size:.72rem;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace;letter-spacing:1px}
+.dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;display:inline-block}
+pre{padding:1.3rem 1.5rem;font-family:'Space Mono',monospace;font-size:.78rem;line-height:1.85;overflow-x:auto;color:#a0d4ff;tab-size:2}
+.kw{color:#f472b6}.tag{color:#7dd3fc}.attr{color:#fbbf24}.val{color:#86efac}.com{color:#3d6e8c;font-style:italic}.fn{color:#c084fc}.str{color:#67e8f9}.num{color:#fbbf24}
+
+/* STEPS */
+.steps-nav{display:flex;gap:.4rem;margin-bottom:2rem;flex-wrap:wrap}
+.step-btn{padding:8px 16px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .25s;font-family:'Sora',sans-serif}
+.step-btn.active,.step-btn:hover{background:var(--card2);border-color:var(--blue);color:var(--white)}
+.step-btn.done{border-color:var(--green);color:var(--green)}
+.step-content{display:none}.step-content.active{display:block;animation:fadeIn .35s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.5rem;gap:0;overflow-x:auto}
+.tab{padding:10px 18px;border:none;background:transparent;color:var(--muted);font-size:.87rem;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;font-family:'Sora',sans-serif;white-space:nowrap}
+.tab.active,.tab:hover{color:var(--blue2);border-bottom-color:var(--blue)}
+.tab-pane{display:none}.tab-pane.active{display:block;animation:fadeIn .3s ease}
+
+/* ACCORD */
+.accord{border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:.7rem 0}
+.accord-head{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.3rem;cursor:pointer;background:var(--card);transition:background .2s;user-select:none}
+.accord-head:hover{background:var(--card2)}
+.accord-head .ttl{font-weight:700;font-size:.92rem;display:flex;align-items:center;gap:.7rem}
+.accord-icon{font-size:1.1rem;transition:transform .3s;color:var(--blue)}
+.accord.open .accord-icon{transform:rotate(180deg)}
+.accord-body{max-height:0;overflow:hidden;transition:max-height .4s ease;background:rgba(14,43,82,.5)}
+.accord.open .accord-body{max-height:900px}
+.accord-inner{padding:1.3rem}
+
+/* TIMELINE */
+.timeline{position:relative;padding-left:2.4rem}
+.timeline::before{content:'';position:absolute;left:.75rem;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--cyan),var(--blue),transparent)}
+.tl-item{position:relative;margin-bottom:1.8rem}
+.tl-dot{position:absolute;left:-1.7rem;top:.18rem;width:13px;height:13px;border-radius:50%;border:2px solid var(--cyan);background:var(--bg);box-shadow:0 0 10px rgba(0,234,255,.4)}
+.tl-title{font-weight:700;font-size:.95rem;margin-bottom:.35rem}
+.tl-desc{color:var(--muted);font-size:.87rem;line-height:1.68}
+
+/* INFO BOXES */
+.info-box{border-radius:13px;padding:1.1rem 1.3rem;margin:.8rem 0;border-left:4px solid}
+.ib-blue{background:rgba(77,184,255,.07);border-color:var(--blue)}
+.ib-green{background:rgba(48,240,160,.07);border-color:var(--green)}
+.ib-orange{background:rgba(255,190,61,.07);border-color:var(--orange)}
+.ib-red{background:rgba(255,107,120,.07);border-color:var(--red)}
+.ib-cyan{background:rgba(0,234,255,.07);border-color:var(--cyan)}
+.ib-purple{background:rgba(192,132,252,.07);border-color:var(--purple)}
+.info-box h4{font-weight:700;margin-bottom:.35rem;font-size:.88rem}
+.info-box p{color:var(--muted);font-size:.86rem;line-height:1.62}
+code.inline{background:rgba(77,184,255,.12);padding:2px 7px;border-radius:5px;font-family:'Space Mono',monospace;font-size:.8rem}
+
+/* EX BOX */
+.ex-box{background:linear-gradient(135deg,rgba(77,184,255,.07),rgba(0,234,255,.04));border:1px solid rgba(77,184,255,.26);border-radius:16px;padding:1.5rem;margin:1.1rem 0}
+.ex-num{font-family:'Space Mono',monospace;font-size:.72rem;font-weight:700;color:var(--cyan);letter-spacing:2px;margin-bottom:.45rem}
+.ex-title{font-size:1.02rem;font-weight:700;margin-bottom:.7rem}
+.ex-desc{color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:.9rem}
+.ex-input{width:100%;background:rgba(3,15,30,.8);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;color:var(--white);font-family:'Space Mono',monospace;font-size:.8rem;resize:vertical;min-height:75px;transition:border .2s;font-size:.8rem}
+.ex-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(77,184,255,.11)}
+.ex-btn{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#031120;border:none;border-radius:10px;padding:9px 22px;font-weight:700;font-size:.83rem;cursor:pointer;transition:all .25s;margin-top:.65rem;font-family:'Sora',sans-serif}
+.ex-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(77,184,255,.35)}
+.ex-result{margin-top:.7rem;background:rgba(48,240,160,.07);border:1px solid rgba(48,240,160,.2);border-radius:10px;padding:.75rem 1rem;font-family:'Space Mono',monospace;font-size:.76rem;color:var(--green);display:none;white-space:pre-wrap;line-height:1.7}
+.ex-result.show{display:block;animation:fadeIn .3s ease}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th{background:rgba(77,184,255,.11);color:var(--blue2);font-weight:700;padding:.65rem .9rem;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:.6rem .9rem;border-bottom:1px solid rgba(77,184,255,.07);color:var(--white)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(77,184,255,.04)}
+.tick{color:var(--green)}.cross{color:var(--red)}.warn{color:var(--orange)}
+
+/* DIVIDER */
+.divider{height:1px;background:linear-gradient(to right,transparent,var(--border2),transparent);margin:1.5rem 0}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:translateY(0)}
+
+/* FOOTER */
+footer{background:rgba(3,15,30,.6);border-top:1px solid var(--border);padding:2.5rem 2rem;text-align:center;position:relative;z-index:1}
+footer .f-logo{font-family:'Space Mono',monospace;font-size:1rem;font-weight:700;color:var(--cyan);margin-bottom:.5rem}
+footer p{color:var(--muted);font-size:.82rem}
+
+@media(max-width:680px){.nav-links{display:none}.hero-chips{flex-direction:column;align-items:center}.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">⬡ MediAI · DISTRIBUTED DB</div>
+  <div class="nav-links">
+    <a href="#hero" class="active">Overview</a>
+    <a href="#setup">⚙️ Setup</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#part1">Fragmentation</a>
+    <a href="#part2">Replication</a>
+    <a href="#part3">Queries</a>
+    <a href="#part4">2PC</a>
+    <a href="#submit">📤 Submit</a>
+  </div>
+  <span class="nav-chip">ENSTA 3A</span>
+</nav>
+
+<div class="w">
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-tag"><span class="pulse"></span>Chapter 2 &nbsp;·&nbsp; Distributed Databases Lab</div>
+  <h1>MediAI Distributed<br>Database Platform</h1>
+  <p class="hero-sub">A hands-on lab where you deploy a real distributed database cluster using Citus + PostgreSQL, implement fragmentation, run distributed queries, and simulate 2-phase commit transactions across 4 geographic sites.</p>
+  <div class="hero-chips">
+    <div class="chip"><div class="cv">4</div><div class="cl">Geographic Sites</div></div>
+    <div class="chip"><div class="cv">Citus</div><div class="cl">Distribution Engine</div></div>
+    <div class="chip"><div class="cv">3</div><div class="cl">Fragmentation Types</div></div>
+    <div class="chip"><div class="cv">2PC</div><div class="cl">Distributed Transactions</div></div>
+  </div>
+  <div class="hero-btns">
+    <a href="#setup" class="btn btn-p">⚙️ Setup First</a>
+    <a href="#architecture" class="btn btn-o">View Architecture</a>
+  </div>
+</section>
+
+<!-- ══ SETUP ══════════════════════════════════════════════ -->
+<section id="setup" style="background:rgba(3,14,28,.75)">
+<div class="container">
+  <span class="sec-tag">Before you start</span>
+  <h2 class="sec-title">Setup & Execution Guide</h2>
+  <p class="sec-desc">Follow these 6 steps in order before writing any SQL. Steps 1–3 are required for everyone. Docker (Steps 4–6) is the core environment for this lab.</p>
+
+  <div class="steps-nav">
+    <button class="step-btn active" onclick="goStep(1)">① Accept Assignment</button>
+    <button class="step-btn" onclick="goStep(2)">② Clone Repo</button>
+    <button class="step-btn" onclick="goStep(3)">③ Install Docker</button>
+    <button class="step-btn" onclick="goStep(4)">④ Launch Cluster</button>
+    <button class="step-btn" onclick="goStep(5)">⑤ Load Schema</button>
+    <button class="step-btn" onclick="goStep(6)">⑥ Connect & Test</button>
+  </div>
+
+  <!-- STEP 1 -->
+  <div id="s1" class="step-content active">
+    <div class="card" style="border-color:rgba(0,234,255,.4)">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        <div style="background:linear-gradient(135deg,var(--cyan),var(--blue));color:#031120;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.3rem;flex-shrink:0">1</div>
+        <div><div style="font-weight:800;font-size:1.15rem">Accept the GitHub Classroom Assignment</div>
+        <div style="color:var(--muted);font-size:.88rem">Creates your personal private repository with all lab files</div></div>
+      </div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title">Click the invitation link sent by your professor</div>
+          <div class="tl-desc">Format: <code class="inline">https://classroom.github.com/a/xxxxxxxx</code> — opens GitHub Classroom.</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title">Sign in with your GitHub account</div>
+          <div class="tl-desc">No account? Create one free at github.com before clicking the link.</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title">Click "Accept this assignment"</div>
+          <div class="tl-desc">Wait 30 seconds, then refresh. GitHub creates your private repo automatically.</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--green);box-shadow:0 0 10px rgba(48,240,160,.4)"></div>
+          <div class="tl-title" style="color:var(--green)">✓ Your repo is ready</div>
+          <div class="tl-desc"><code class="inline">github.com/[org]/tp-distributed-[your-username]</code> — only you and the professor can see it.</div>
+        </div>
+      </div>
+      <div class="info-box ib-cyan">
+        <h4>💡 Isolated workspace</h4>
+        <p>Your pushes go into YOUR repo inside the Classroom organisation — never into the professor's template. 74 students = 74 separate repos, all isolated.</p>
+      </div>
+      <div style="margin-top:1.4rem;text-align:right"><button class="ex-btn" onclick="goStep(2)">Next → Clone Repo ▶</button></div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div id="s2" class="step-content">
+    <div class="card" style="border-color:rgba(77,184,255,.4)">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        <div style="background:linear-gradient(135deg,var(--blue),var(--cyan));color:#031120;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.3rem;flex-shrink:0">2</div>
+        <div><div style="font-weight:800;font-size:1.15rem">Clone your repository to your PC</div>
+        <div style="color:var(--muted);font-size:.88rem">Download the lab files — SQL scripts, schema, exercises</div></div>
+      </div>
+      <div class="code-wrap">
+        <div class="code-bar"><span class="badge b-blue">PowerShell / Terminal</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+        <pre><span class="com"># Open PowerShell (Windows) or Terminal (Mac/Linux)</span>
+
+<span class="com"># Go to Desktop</span>
+<span class="kw">cd</span> Desktop
+
+<span class="com"># Clone — replace YOUR-USERNAME with your GitHub username</span>
+git clone https://github.com/[org]/tp-distributed-<span class="val">YOUR-USERNAME</span>.git
+
+<span class="com"># Enter the folder</span>
+<span class="kw">cd</span> tp-distributed-<span class="val">YOUR-USERNAME</span>
+
+<span class="com"># Verify the files are there</span>
+dir   <span class="com"># Windows</span>
+ls    <span class="com"># Mac / Linux</span>
+
+<span class="com"># Expected output :</span>
+<span class="str">README.md  data/  docker-compose.yml  exercises/  solutions/</span></pre>
+      </div>
+      <div class="info-box ib-orange">
+        <h4>⚠️ Git not installed?</h4>
+        <p>Download at <strong>git-scm.com/downloads</strong> → install → reopen your terminal → retry the commands above.</p>
+      </div>
+      <div style="margin-top:1.4rem;display:flex;justify-content:space-between">
+        <button class="ex-btn" style="background:var(--card2);color:var(--white)" onclick="goStep(1)">◀ Back</button>
+        <button class="ex-btn" onclick="goStep(3)">Next → Install Docker ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div id="s3" class="step-content">
+    <div class="card" style="border-color:rgba(255,190,61,.4)">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        <div style="background:linear-gradient(135deg,var(--orange),var(--red));color:#031120;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.3rem;flex-shrink:0">3</div>
+        <div><div style="font-weight:800;font-size:1.15rem">Install Docker Desktop</div>
+        <div style="color:var(--muted);font-size:.88rem">Runs the entire 4-node Citus cluster with one command</div></div>
+      </div>
+      <div class="info-box ib-cyan" style="margin-bottom:1.3rem">
+        <h4>🐳 What is Docker?</h4>
+        <p>Docker packages software into isolated "containers". Instead of manually installing PostgreSQL + Citus on every PC, one command <code class="inline">docker-compose up -d</code> launches the full 4-node cluster — identical on every machine in the class.</p>
+      </div>
+      <div class="grid2" style="margin-bottom:1.3rem">
+        <div>
+          <div style="font-weight:700;margin-bottom:.8rem;color:var(--orange)">Install Docker Desktop</div>
+          <div class="timeline">
+            <div class="tl-item"><div class="tl-dot" style="border-color:var(--orange)"></div>
+              <div class="tl-title">Go to docker.com/products/docker-desktop</div>
+              <div class="tl-desc">Download for Windows / Mac / Linux</div>
+            </div>
+            <div class="tl-item"><div class="tl-dot" style="border-color:var(--orange)"></div>
+              <div class="tl-title">Run installer → restart PC</div>
+              <div class="tl-desc">On Windows: accept WSL 2 activation when asked — it's mandatory</div>
+            </div>
+            <div class="tl-item"><div class="tl-dot" style="border-color:var(--green)"></div>
+              <div class="tl-title" style="color:var(--green)">Open Docker Desktop</div>
+              <div class="tl-desc">Wait until the 🐳 whale icon in the taskbar turns green</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-weight:700;margin-bottom:.8rem;color:var(--orange)">Verify it works</div>
+          <div class="code-wrap">
+            <div class="code-bar"><span class="badge b-orange">Terminal</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+            <pre><span class="com"># Check version</span>
+docker --version
+<span class="str"># Docker version 24.x.x ✓</span>
+
+<span class="com"># Quick test</span>
+docker run hello-world
+<span class="str"># "Hello from Docker!" ✓</span></pre>
+          </div>
+          <div class="accord" style="margin-top:.8rem">
+            <div class="accord-head" onclick="toggleAccord(this)" style="padding:.6rem 1rem">
+              <span class="ttl" style="font-size:.85rem"><span class="badge b-red">Error</span> Cannot connect to daemon</span>
+              <span class="accord-icon">▾</span>
+            </div>
+            <div class="accord-body"><div class="accord-inner" style="padding:.9rem">
+              <p style="color:var(--muted);font-size:.85rem">Docker Desktop is not open. Start it from Start Menu / Applications and wait for the green whale.</p>
+            </div></div>
+          </div>
+          <div class="accord">
+            <div class="accord-head" onclick="toggleAccord(this)" style="padding:.6rem 1rem">
+              <span class="ttl" style="font-size:.85rem"><span class="badge b-red">Error</span> WSL 2 not installed</span>
+              <span class="accord-icon">▾</span>
+            </div>
+            <div class="accord-body"><div class="accord-inner" style="padding:.9rem">
+              <div class="code-wrap">
+                <div class="code-bar"><span class="badge b-red">Fix — PowerShell as Admin</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+                <pre>wsl --install
+<span class="com"># Restart PC, then reopen Docker Desktop</span></pre>
+              </div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:1.4rem;display:flex;justify-content:space-between">
+        <button class="ex-btn" style="background:var(--card2);color:var(--white)" onclick="goStep(2)">◀ Back</button>
+        <button class="ex-btn" onclick="goStep(4)">Next → Launch Cluster ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div id="s4" class="step-content">
+    <div class="card" style="border-color:rgba(77,184,255,.4)">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        <div style="background:linear-gradient(135deg,var(--blue),var(--purple));color:#031120;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.3rem;flex-shrink:0">4</div>
+        <div><div style="font-weight:800;font-size:1.15rem">Launch the Citus Cluster</div>
+        <div style="color:var(--muted);font-size:.88rem">1 coordinator + 3 worker nodes — all in one command</div></div>
+      </div>
+      <div class="code-wrap">
+        <div class="code-bar"><span class="badge b-blue">Launch — inside your lab folder</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+        <pre><span class="com"># Make sure you are in the right folder</span>
+<span class="kw">cd</span> Desktop/tp-distributed-<span class="val">YOUR-USERNAME</span>
+
+<span class="com"># Start the 4-node cluster (first time = ~4 min download)</span>
+docker-compose up -d
+
+<span class="com"># Verify all 4 containers are running</span>
+docker ps
+
+<span class="com"># Expected — you must see 4 containers:</span>
+CONTAINER ID  IMAGE                  STATUS
+<span class="str">aaa111</span>        citusdata/citus:12.1   <span class="fn">Up (citus_master)</span>
+<span class="str">bbb222</span>        citusdata/citus:12.1   <span class="fn">Up (citus_worker1)</span>
+<span class="str">ccc333</span>        citusdata/citus:12.1   <span class="fn">Up (citus_worker2)</span>
+<span class="str">ddd444</span>        citusdata/citus:12.1   <span class="fn">Up (citus_worker3)</span></pre>
+      </div>
+      <div class="accord" style="margin-top:1rem">
+        <div class="accord-head" onclick="toggleAccord(this)" style="padding:.6rem 1rem">
+          <span class="ttl" style="font-size:.85rem"><span class="badge b-red">Error</span> Download fails / connection timeout</span>
+          <span class="accord-icon">▾</span>
+        </div>
+        <div class="accord-body"><div class="accord-inner" style="padding:.9rem">
+          <p style="color:var(--muted);font-size:.85rem;margin-bottom:.7rem">University network may block Docker Hub. Solutions:</p>
+          <div class="code-wrap">
+            <div class="code-bar"><span class="badge b-orange">Fix</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+            <pre><span class="com"># Option A: use your phone hotspot, then:</span>
+docker-compose up -d
+
+<span class="com"># Option B: pre-download at home before the lab:</span>
+docker pull citusdata/citus:12.1</pre>
+          </div>
+        </div></div>
+      </div>
+      <div class="info-box ib-blue" style="margin-top:1rem">
+        <h4>💡 What just happened?</h4>
+        <p>Docker launched 4 PostgreSQL+Citus containers that talk to each other on an internal network. <code class="inline">citus_master</code> is the coordinator — all your SQL goes there. The 3 workers store the actual shards.</p>
+      </div>
+      <div style="margin-top:1.4rem;display:flex;justify-content:space-between">
+        <button class="ex-btn" style="background:var(--card2);color:var(--white)" onclick="goStep(3)">◀ Back</button>
+        <button class="ex-btn" onclick="goStep(5)">Next → Load Schema ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div id="s5" class="step-content">
+    <div class="card" style="border-color:rgba(48,240,160,.4)">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        <div style="background:linear-gradient(135deg,var(--green),var(--teal));color:#031120;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.3rem;flex-shrink:0">5</div>
+        <div><div style="font-weight:800;font-size:1.15rem">Load the Schema and Seed Data</div>
+        <div style="color:var(--muted);font-size:.88rem">Create tables, distribute them, insert test data</div></div>
+      </div>
+      <div class="code-wrap">
+        <div class="code-bar"><span class="badge b-green">Load all scripts in order</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+        <pre><span class="com"># 1. Connect to the coordinator and create tables</span>
+docker exec -it citus_master psql -U postgres -d mediAI \
+  -f /data/schema-mediAI.sql
+
+<span class="com"># 2. Register workers + distribute tables with Citus</span>
+docker exec -it citus_master psql -U postgres -d mediAI \
+  -f /data/init-cluster.sql
+
+<span class="com"># 3. Insert 20 patients + medical records + transactions</span>
+docker exec -it citus_master psql -U postgres -d mediAI \
+  -f /data/seed-mediAI.sql
+
+<span class="com"># 4. Verify everything loaded correctly</span>
+docker exec -it citus_master psql -U postgres -d mediAI -c \
+  "SELECT 'Patients' AS t, COUNT(*) FROM Patients
+   UNION ALL
+   SELECT 'MedicalRecords', COUNT(*) FROM MedicalRecords
+   UNION ALL
+   SELECT 'TrainingData', COUNT(*) FROM TrainingData
+   UNION ALL
+   SELECT 'Transactions', COUNT(*) FROM Transactions;"
+
+<span class="com"># Expected:</span>
+<span class="str"> t              | count
+----------------+-------
+ Patients       |    20
+ MedicalRecords |    14
+ TrainingData   |    13
+ Transactions   |    18</span></pre>
+      </div>
+      <div class="info-box ib-green" style="margin-top:1rem">
+        <h4>✅ If you see those numbers — you are ready</h4>
+        <p>All 4 tables are created and distributed across the 3 worker nodes by Citus. You can now start the lab exercises.</p>
+      </div>
+      <div style="margin-top:1.4rem;display:flex;justify-content:space-between">
+        <button class="ex-btn" style="background:var(--card2);color:var(--white)" onclick="goStep(4)">◀ Back</button>
+        <button class="ex-btn" onclick="goStep(6)">Next → Connect & Test ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 6 -->
+  <div id="s6" class="step-content">
+    <div class="card" style="border-color:rgba(0,212,176,.4)">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        <div style="background:linear-gradient(135deg,var(--teal),var(--green));color:#031120;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.3rem;flex-shrink:0">6</div>
+        <div><div style="font-weight:800;font-size:1.15rem">Connect and Run Your First Query</div>
+        <div style="color:var(--muted);font-size:.88rem">Two ways to interact with the cluster</div></div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="showTab('t6-psql','t6')">Terminal (psql)</button>
+        <button class="tab" onclick="showTab('t6-dbeaver','t6')">DBeaver (GUI)</button>
+      </div>
+      <div id="t6-psql" class="tab-pane active">
+        <div class="code-wrap">
+          <div class="code-bar"><span class="badge b-teal">Connect via psql</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+          <pre><span class="com"># Connect to the coordinator (master)</span>
+docker exec -it citus_master psql -U postgres -d mediAI
+
+<span class="com"># You are now inside psql. Try:</span>
+<span class="kw">SELECT</span> name, country, siteOrigin
+<span class="kw">FROM</span> Patients
+<span class="kw">WHERE</span> country = <span class="val">'France'</span>
+<span class="kw">LIMIT</span> <span class="num">5</span>;
+
+<span class="com"># Exit psql:</span>
+\q</pre>
+        </div>
+      </div>
+      <div id="t6-dbeaver" class="tab-pane">
+        <div class="info-box ib-blue" style="margin-bottom:1rem">
+          <h4>DBeaver — recommended for beginners</h4>
+          <p>Download free at <strong>dbeaver.io</strong>. Then create a new connection with these settings:</p>
+        </div>
+        <div class="code-wrap">
+          <div class="code-bar"><span class="badge b-blue">DBeaver connection settings</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+          <pre>Type     : PostgreSQL
+Host     : <span class="str">localhost</span>
+Port     : <span class="num">5432</span>
+Database : <span class="str">mediAI</span>
+Username : <span class="str">postgres</span>
+Password : <span class="str">postgres</span></pre>
+        </div>
+      </div>
+      <div class="info-box ib-green" style="margin-top:1rem">
+        <h4>🚀 You are fully set up!</h4>
+        <p>Citus cluster running, tables distributed, data loaded. Start with Part 1 — Fragmentation and work through each section in order.</p>
+      </div>
+      <div style="margin-top:1.4rem;display:flex;justify-content:space-between">
+        <button class="ex-btn" style="background:var(--card2);color:var(--white)" onclick="goStep(5)">◀ Back</button>
+        <a href="#part1" class="ex-btn" style="text-decoration:none">🚀 Start Part 1 ▶</a>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ ARCHITECTURE ════════════════════════════════════════ -->
+<section id="architecture">
+<div class="container">
+  <span class="sec-tag">System Design</span>
+  <h2 class="sec-title">MediAI Cluster Architecture</h2>
+  <p class="sec-desc">MediAI runs on a Citus cluster: 1 coordinator (Paris HQ) + 3 worker nodes (Tunis, Montréal, Tokyo). The coordinator receives all queries and routes them to the right workers transparently.</p>
+
+  <div class="diagram-wrap reveal" style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2rem;margin-bottom:2rem">
+    <svg width="100%" viewBox="0 0 900 440">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#4db8ff" stroke-width="1.5"/>
+        </marker>
+        <marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M2 2L8 5L2 8" fill="none" stroke="#00eaff" stroke-width="1.5"/>
+        </marker>
+      </defs>
+      <!-- Client -->
+      <rect x="360" y="10" width="180" height="50" rx="12" fill="rgba(77,184,255,.08)" stroke="rgba(77,184,255,.4)" stroke-width="1.5" stroke-dasharray="5 3"/>
+      <text x="450" y="31" text-anchor="middle" fill="#7ecfff" font-family="Sora" font-size="11" font-weight="700">Your SQL queries</text>
+      <text x="450" y="47" text-anchor="middle" fill="#5a9ec8" font-family="Space Mono" font-size="8">psql / DBeaver</text>
+      <line x1="450" y1="60" x2="450" y2="90" stroke="#4db8ff" stroke-width="1.5" marker-end="url(#a1)"/>
+
+      <!-- Coordinator -->
+      <rect x="280" y="90" width="340" height="88" rx="16" fill="#0e2b52" stroke="#00eaff" stroke-width="2"/>
+      <rect x="280" y="90" width="340" height="88" rx="16" fill="none" stroke="rgba(0,234,255,.13)" stroke-width="10"/>
+      <text x="450" y="120" text-anchor="middle" fill="#00eaff" font-family="Sora" font-size="14" font-weight="800">COORDINATOR</text>
+      <text x="450" y="138" text-anchor="middle" fill="#5a9ec8" font-family="Sora" font-size="10">citus_master · Paris HQ · port 5432</text>
+      <text x="450" y="155" text-anchor="middle" fill="#4db8ff" font-family="Space Mono" font-size="9">Query planner · Shard router · Result merger</text>
+
+      <!-- Lines down -->
+      <line x1="450" y1="178" x2="450" y2="215" stroke="#4db8ff" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <line x1="120" y1="215" x2="780" y2="215" stroke="rgba(77,184,255,.22)" stroke-width="1.5"/>
+      <line x1="120" y1="215" x2="120" y2="248" stroke="#4db8ff" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a1)"/>
+      <line x1="340" y1="215" x2="340" y2="248" stroke="#4db8ff" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a1)"/>
+      <line x1="560" y1="215" x2="560" y2="248" stroke="#4db8ff" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a1)"/>
+      <line x1="780" y1="215" x2="780" y2="248" stroke="#4db8ff" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a1)"/>
+
+      <!-- Workers -->
+      <rect x="40"  y="248" width="160" height="88" rx="14" fill="#0a2040" stroke="#4db8ff" stroke-width="1.5"/>
+      <text x="120" y="275" text-anchor="middle" fill="#00eaff" font-family="Sora" font-size="12" font-weight="700">🇫🇷 Worker 1</text>
+      <text x="120" y="292" text-anchor="middle" fill="#5a9ec8" font-family="Sora" font-size="10">Tunis · EU-South</text>
+      <text x="120" y="308" text-anchor="middle" fill="#2c5a82" font-family="Space Mono" font-size="8">citus_worker1</text>
+      <text x="120" y="323" text-anchor="middle" fill="#2c5a82" font-family="Space Mono" font-size="8">Tunisia shards</text>
+
+      <rect x="260" y="248" width="160" height="88" rx="14" fill="#0a2040" stroke="#00d4b0" stroke-width="1.5"/>
+      <text x="340" y="275" text-anchor="middle" fill="#00d4b0" font-family="Sora" font-size="12" font-weight="700">🇨🇦 Worker 2</text>
+      <text x="340" y="292" text-anchor="middle" fill="#5a9ec8" font-family="Sora" font-size="10">Montréal · NA</text>
+      <text x="340" y="308" text-anchor="middle" fill="#2c5a82" font-family="Space Mono" font-size="8">citus_worker2</text>
+      <text x="340" y="323" text-anchor="middle" fill="#2c5a82" font-family="Space Mono" font-size="8">Canada shards</text>
+
+      <rect x="480" y="248" width="160" height="88" rx="14" fill="#0a2040" stroke="#c084fc" stroke-width="1.5"/>
+      <text x="560" y="275" text-anchor="middle" fill="#c084fc" font-family="Sora" font-size="12" font-weight="700">🇫🇷 Worker 3</text>
+      <text x="560" y="292" text-anchor="middle" fill="#5a9ec8" font-family="Sora" font-size="10">Tokyo · APAC</text>
+      <text x="560" y="308" text-anchor="middle" fill="#2c5a82" font-family="Space Mono" font-size="8">citus_worker3</text>
+      <text x="560" y="323" text-anchor="middle" fill="#2c5a82" font-family="Space Mono" font-size="8">Japan shards</text>
+
+      <rect x="700" y="248" width="160" height="88" rx="14" fill="#0a2040" stroke="#f472b6" stroke-width="1.5"/>
+      <text x="780" y="275" text-anchor="middle" fill="#f472b6" font-family="Sora" font-size="12" font-weight="700">🇫🇷 Coordinator</text>
+      <text x="780" y="292" text-anchor="middle" fill="#5a9ec8" font-family="Sora" font-size="10">Paris · EU-West</text>
+      <text x="780" y="308" text-anchor="middle" fill="#2c5a82" font-family="Space Mono" font-size="8">citus_master</text>
+      <text x="780" y="323" text-anchor="middle" fill="#2c5a82" font-family="Space Mono" font-size="8">France shards</text>
+
+      <!-- Shards layer -->
+      <rect x="30" y="360" width="840" height="50" rx="12" fill="rgba(77,184,255,.05)" stroke="rgba(77,184,255,.18)" stroke-width="1" stroke-dasharray="5 3"/>
+      <text x="450" y="382" text-anchor="middle" fill="#5a9ec8" font-family="Sora" font-size="11" font-weight="700">32 shards distributed across 3 workers</text>
+      <text x="450" y="398" text-anchor="middle" fill="#2c5a82" font-family="Space Mono" font-size="8">Patients · MedicalRecords · TrainingData · Transactions — each distributed by country / siteOrigin</text>
+      <line x1="120" y1="336" x2="120" y2="360" stroke="rgba(77,184,255,.3)" stroke-width="1" stroke-dasharray="3 2"/>
+      <line x1="340" y1="336" x2="340" y2="360" stroke="rgba(0,212,176,.3)" stroke-width="1" stroke-dasharray="3 2"/>
+      <line x1="560" y1="336" x2="560" y2="360" stroke="rgba(192,132,252,.3)" stroke-width="1" stroke-dasharray="3 2"/>
+      <line x1="780" y1="336" x2="780" y2="360" stroke="rgba(244,114,182,.3)" stroke-width="1" stroke-dasharray="3 2"/>
+    </svg>
+  </div>
+
+  <!-- Tables distribution -->
+  <div class="reveal" style="margin-bottom:2rem">
+    <h3 style="font-weight:800;margin-bottom:1.2rem;font-size:1.1rem">Table Distribution Strategy</h3>
+    <div style="overflow-x:auto;border-radius:14px;border:1px solid var(--border)">
+      <table>
+        <tr><th>Table</th><th>Distribution Key</th><th>Type</th><th>🇫🇷 Paris</th><th>🇹🇳 Tunis</th><th>🇨🇦 Montréal</th><th>🇯🇵 Tokyo</th></tr>
+        <tr><td><code class="inline">Patients</code></td><td><code class="inline">country</code></td><td><span class="badge b-blue">Horizontal</span></td><td class="tick">France</td><td class="tick">Tunisia</td><td class="tick">Canada</td><td class="tick">Japan</td></tr>
+        <tr><td><code class="inline">MedicalRecords</code></td><td><code class="inline">country</code></td><td><span class="badge b-blue">Horizontal</span></td><td class="tick">co-loc</td><td class="tick">co-loc</td><td class="tick">co-loc</td><td class="tick">co-loc</td></tr>
+        <tr><td><code class="inline">TrainingData</code></td><td><code class="inline">siteOrigin</code></td><td><span class="badge b-cyan">Horizontal</span></td><td class="tick">Paris</td><td class="tick">Tunis</td><td class="tick">Montreal</td><td class="tick">Tokyo</td></tr>
+        <tr><td><code class="inline">Transactions</code></td><td><code class="inline">country</code></td><td><span class="badge b-purple">Hybrid</span></td><td class="tick">France</td><td class="tick">Tunisia</td><td class="tick">Canada</td><td class="tick">Japan</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ PART 1 — FRAGMENTATION ══════════════════════════════ -->
+<section id="part1" style="background:rgba(3,14,28,.6)">
+<div class="container">
+  <span class="sec-tag">Part 1</span>
+  <h2 class="sec-title">Fragmentation</h2>
+  <p class="sec-desc">Fragmentation divides a table across multiple sites. You will implement all three types: horizontal (rows), vertical (columns), and hybrid (both combined).</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('frag-h','tf')">Horizontal</button>
+    <button class="tab" onclick="showTab('frag-v','tf')">Vertical</button>
+    <button class="tab" onclick="showTab('frag-hy','tf')">Hybrid</button>
+    <button class="tab" onclick="showTab('frag-citus','tf')">Citus Distribution</button>
+  </div>
+
+  <!-- HORIZONTAL -->
+  <div id="frag-h" class="tab-pane active">
+    <div class="grid2">
+      <div>
+        <h3 style="font-weight:700;margin-bottom:.8rem">What is horizontal fragmentation?</h3>
+        <p style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:1rem">Split a table into subsets of <strong>rows</strong> based on a predicate. Each site stores only the rows that belong to it. The union of all fragments reconstructs the full table.</p>
+        <div style="background:var(--card2);border-radius:12px;padding:1.2rem;margin-bottom:1rem">
+          <div style="font-family:'Space Mono',monospace;font-size:.8rem;color:var(--muted);margin-bottom:.5rem">Formal notation:</div>
+          <div style="font-family:'Space Mono',monospace;font-size:.82rem;line-height:2">
+            <div><span style="color:var(--cyan)">F_Paris</span> = σ(siteOrigin = <span style="color:var(--green)">'Paris'</span>) (TrainingData)</div>
+            <div><span style="color:var(--teal)">F_Tunis</span> = σ(siteOrigin = <span style="color:var(--green)">'Tunis'</span>) (TrainingData)</div>
+            <div><span style="color:var(--purple)">F_Montreal</span> = σ(siteOrigin = <span style="color:var(--green)">'Montreal'</span>) (TrainingData)</div>
+            <div><span style="color:var(--pink)">F_Tokyo</span> = σ(siteOrigin = <span style="color:var(--green)">'Tokyo'</span>) (TrainingData)</div>
+          </div>
+        </div>
+        <div class="info-box ib-blue">
+          <h4>Key properties to verify</h4>
+          <p><strong>Completeness:</strong> every row belongs to at least one fragment.<br>
+          <strong>Disjointness:</strong> no row appears in two fragments (for H fragmentation).<br>
+          <strong>Reconstructibility:</strong> UNION of all fragments = original table.</p>
+        </div>
+      </div>
+      <div>
+        <div class="ex-box">
+          <div class="ex-num">EXERCISE 1.1a</div>
+          <div class="ex-title">Create horizontal fragments of TrainingData</div>
+          <div class="ex-desc">Write 4 SQL views — one per site — that implement horizontal fragmentation of <code class="inline">TrainingData</code> by <code class="inline">siteOrigin</code>.</div>
+          <div class="code-wrap">
+            <div class="code-bar"><span class="badge b-blue">SQL — complete the blanks</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+            <pre><span class="com">-- Fragment Paris</span>
+<span class="kw">CREATE OR REPLACE VIEW</span> TrainingData_Paris <span class="kw">AS</span>
+  <span class="kw">SELECT</span> * <span class="kw">FROM</span> TrainingData
+  <span class="kw">WHERE</span> siteOrigin = <span class="val">___</span>;   <span class="com">← complete</span>
+
+<span class="com">-- Fragment Tunis</span>
+<span class="kw">CREATE OR REPLACE VIEW</span> TrainingData_Tunis <span class="kw">AS</span>
+  <span class="kw">SELECT</span> * <span class="kw">FROM</span> TrainingData
+  <span class="kw">WHERE</span> <span class="val">___</span> = <span class="val">'Tunis'</span>;      <span class="com">← complete</span>
+
+<span class="com">-- TODO: write views for Montreal and Tokyo</span>
+<span class="val">___</span></pre>
+          </div>
+        </div>
+        <div class="ex-box">
+          <div class="ex-num">EXERCISE 1.1b</div>
+          <div class="ex-title">Verify completeness</div>
+          <div class="ex-desc">Write a query that counts rows per fragment and checks the total matches the full table.</div>
+          <textarea class="ex-input" placeholder="SELECT siteOrigin, COUNT(*) FROM TrainingData GROUP BY ___; ..."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VERTICAL -->
+  <div id="frag-v" class="tab-pane">
+    <div class="grid2">
+      <div>
+        <h3 style="font-weight:700;margin-bottom:.8rem">What is vertical fragmentation?</h3>
+        <p style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:1rem">Split a table into subsets of <strong>columns</strong> based on access patterns. Each fragment contains the primary key + a subset of attributes. Used when different user groups need different columns.</p>
+        <div style="background:var(--card2);border-radius:12px;padding:1.2rem;margin-bottom:1rem">
+          <div style="font-family:'Space Mono',monospace;font-size:.78rem;color:var(--muted);margin-bottom:.5rem">MedicalRecords split:</div>
+          <div style="font-family:'Space Mono',monospace;font-size:.8rem;line-height:2.2">
+            <div><span style="color:var(--cyan)">FA</span> = Π(idRecord, idPatient, country, date, examType, result)</div>
+            <div style="color:var(--muted);font-size:.72rem;margin-bottom:.3rem">→ Clinical data — used by doctors</div>
+            <div><span style="color:var(--orange)">FB</span> = Π(idRecord, idPatient, country, aiModelUsed, aiScore, aiVersion)</div>
+            <div style="color:var(--muted);font-size:.72rem">→ AI data — used by data scientists</div>
+          </div>
+        </div>
+        <div class="info-box ib-orange">
+          <h4>⚠️ idRecord must appear in BOTH fragments</h4>
+          <p>This is the reconstructibility condition. The JOIN on idRecord must rebuild the original table perfectly.</p>
+        </div>
+      </div>
+      <div>
+        <div class="ex-box">
+          <div class="ex-num">EXERCISE 1.2a</div>
+          <div class="ex-title">Why split clinical from AI data?</div>
+          <div class="ex-desc">Give 2 reasons why MedicalRecords should be vertically fragmented into a clinical fragment and an AI fragment.</div>
+          <textarea class="ex-input" placeholder="Reason 1: ...&#10;Reason 2: ..."></textarea>
+        </div>
+        <div class="ex-box">
+          <div class="ex-num">EXERCISE 1.2b</div>
+          <div class="ex-title">Create physical vertical fragments</div>
+          <div class="ex-desc">Create two separate tables implementing the vertical fragments. Then write the INSERT to populate them from MedicalRecords. Finally, write the JOIN that reconstructs the full table.</div>
+          <textarea class="ex-input" placeholder="CREATE TABLE MedRec_Clinical (&#10;  idRecord INTEGER,&#10;  idPatient INTEGER,&#10;  ...&#10;);&#10;&#10;CREATE TABLE MedRec_AI (&#10;  idRecord INTEGER,&#10;  ...&#10;);"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HYBRID -->
+  <div id="frag-hy" class="tab-pane">
+    <h3 style="font-weight:700;margin-bottom:.8rem">What is hybrid fragmentation?</h3>
+    <p style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:1.5rem">Apply horizontal fragmentation first, then vertical fragmentation on each horizontal fragment — or vice versa. The result is a matrix of fragments. Applied here to the <code class="inline">Transactions</code> table.</p>
+    <div class="diagram-wrap reveal" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:1.5rem;margin-bottom:1.5rem">
+      <svg width="100%" viewBox="0 0 820 280">
+        <text x="410" y="22" text-anchor="middle" fill="#5a9ec8" font-family="Space Mono" font-size="10">Transactions(idTrans, idPatient, country, date, type, amount, currency, status)</text>
+        <!-- H split arrow -->
+        <text x="410" y="50" text-anchor="middle" fill="#4db8ff" font-family="Sora" font-size="11" font-weight="700">Step 1 — Horizontal split by country</text>
+        <line x1="50" y1="60" x2="770" y2="60" stroke="rgba(77,184,255,.3)" stroke-width="1"/>
+        <!-- H fragments -->
+        <rect x="20"  y="68" width="175" height="42" rx="10" fill="#0e2b52" stroke="#4db8ff" stroke-width="1.5"/>
+        <text x="107" y="86" text-anchor="middle" fill="#7ecfff" font-family="Sora" font-size="11" font-weight="700">H_France</text>
+        <text x="107" y="100" text-anchor="middle" fill="#5a9ec8" font-family="Space Mono" font-size="8">country='France'</text>
+        <rect x="215" y="68" width="175" height="42" rx="10" fill="#0e2b52" stroke="#00d4b0" stroke-width="1.5"/>
+        <text x="302" y="86" text-anchor="middle" fill="#00d4b0" font-family="Sora" font-size="11" font-weight="700">H_Tunisia</text>
+        <text x="302" y="100" text-anchor="middle" fill="#5a9ec8" font-family="Space Mono" font-size="8">country='Tunisia'</text>
+        <rect x="410" y="68" width="175" height="42" rx="10" fill="#0e2b52" stroke="#c084fc" stroke-width="1.5"/>
+        <text x="497" y="86" text-anchor="middle" fill="#c084fc" font-family="Sora" font-size="11" font-weight="700">H_Canada</text>
+        <text x="497" y="100" text-anchor="middle" fill="#5a9ec8" font-family="Space Mono" font-size="8">country='Canada'</text>
+        <rect x="605" y="68" width="175" height="42" rx="10" fill="#0e2b52" stroke="#f472b6" stroke-width="1.5"/>
+        <text x="692" y="86" text-anchor="middle" fill="#f472b6" font-family="Sora" font-size="11" font-weight="700">H_Japan</text>
+        <text x="692" y="100" text-anchor="middle" fill="#5a9ec8" font-family="Space Mono" font-size="8">country='Japan'</text>
+
+        <text x="410" y="140" text-anchor="middle" fill="#4db8ff" font-family="Sora" font-size="11" font-weight="700">Step 2 — Vertical split on each fragment</text>
+        <line x1="50" y1="150" x2="770" y2="150" stroke="rgba(77,184,255,.2)" stroke-width="1" stroke-dasharray="4 3"/>
+        <!-- V-1 France -->
+        <rect x="20"  y="158" width="82" height="48" rx="8" fill="#071928" stroke="rgba(77,184,255,.5)" stroke-width="1"/>
+        <text x="61"  y="177" text-anchor="middle" fill="#7ecfff" font-family="Space Mono" font-size="8" font-weight="700">FR_FIN</text>
+        <text x="61"  y="191" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">amount</text>
+        <text x="61"  y="201" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">currency</text>
+        <rect x="112" y="158" width="82" height="48" rx="8" fill="#071928" stroke="rgba(77,184,255,.35)" stroke-width="1"/>
+        <text x="153" y="177" text-anchor="middle" fill="#7ecfff" font-family="Space Mono" font-size="8" font-weight="700">FR_MGT</text>
+        <text x="153" y="191" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">type</text>
+        <text x="153" y="201" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">status</text>
+        <!-- V-2 Tunisia -->
+        <rect x="215" y="158" width="82" height="48" rx="8" fill="#071928" stroke="rgba(0,212,176,.5)" stroke-width="1"/>
+        <text x="256" y="177" text-anchor="middle" fill="#00d4b0" font-family="Space Mono" font-size="8" font-weight="700">TN_FIN</text>
+        <text x="256" y="191" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">amount</text>
+        <text x="256" y="201" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">currency</text>
+        <rect x="307" y="158" width="82" height="48" rx="8" fill="#071928" stroke="rgba(0,212,176,.35)" stroke-width="1"/>
+        <text x="348" y="177" text-anchor="middle" fill="#00d4b0" font-family="Space Mono" font-size="8" font-weight="700">TN_MGT</text>
+        <text x="348" y="191" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">type</text>
+        <text x="348" y="201" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">status</text>
+        <!-- V-3 Canada -->
+        <rect x="410" y="158" width="82" height="48" rx="8" fill="#071928" stroke="rgba(192,132,252,.5)" stroke-width="1"/>
+        <text x="451" y="177" text-anchor="middle" fill="#c084fc" font-family="Space Mono" font-size="8" font-weight="700">CA_FIN</text>
+        <text x="451" y="191" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">amount</text>
+        <text x="451" y="201" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">currency</text>
+        <rect x="502" y="158" width="82" height="48" rx="8" fill="#071928" stroke="rgba(192,132,252,.35)" stroke-width="1"/>
+        <text x="543" y="177" text-anchor="middle" fill="#c084fc" font-family="Space Mono" font-size="8" font-weight="700">CA_MGT</text>
+        <text x="543" y="191" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">type</text>
+        <text x="543" y="201" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">status</text>
+        <!-- V-4 Japan -->
+        <rect x="605" y="158" width="82" height="48" rx="8" fill="#071928" stroke="rgba(244,114,182,.5)" stroke-width="1"/>
+        <text x="646" y="177" text-anchor="middle" fill="#f472b6" font-family="Space Mono" font-size="8" font-weight="700">JP_FIN</text>
+        <text x="646" y="191" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">amount</text>
+        <text x="646" y="201" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">currency</text>
+        <rect x="697" y="158" width="82" height="48" rx="8" fill="#071928" stroke="rgba(244,114,182,.35)" stroke-width="1"/>
+        <text x="738" y="177" text-anchor="middle" fill="#f472b6" font-family="Space Mono" font-size="8" font-weight="700">JP_MGT</text>
+        <text x="738" y="191" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">type</text>
+        <text x="738" y="201" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="7">status</text>
+        <text x="410" y="250" text-anchor="middle" fill="#3d6e8c" font-family="Sora" font-size="10">Result: 8 hybrid fragments (4 countries × 2 column sets)</text>
+        <text x="410" y="268" text-anchor="middle" fill="#3d6e8c" font-family="Space Mono" font-size="9">All contain: idTrans, idPatient, date (JOIN keys)</text>
+      </svg>
+    </div>
+    <div class="ex-box">
+      <div class="ex-num">EXERCISE 1.3</div>
+      <div class="ex-title">Implement all 8 hybrid fragments as SQL views</div>
+      <div class="ex-desc">The France fragments are done as examples. Write the remaining 6 views (Tunisia, Canada, Japan × Financial + Management). Then write the JOIN that reconstructs France's full Transactions.</div>
+      <div class="code-wrap">
+        <div class="code-bar"><span class="badge b-blue">SQL — France example given, complete the rest</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+        <pre><span class="com">-- France Financial</span>
+<span class="kw">CREATE OR REPLACE VIEW</span> Trans_FR_Financial <span class="kw">AS</span>
+  <span class="kw">SELECT</span> idTrans, idPatient, date, amount, currency
+  <span class="kw">FROM</span> Transactions <span class="kw">WHERE</span> country = <span class="val">'France'</span>;
+
+<span class="com">-- France Management</span>
+<span class="kw">CREATE OR REPLACE VIEW</span> Trans_FR_Management <span class="kw">AS</span>
+  <span class="kw">SELECT</span> idTrans, idPatient, type, status
+  <span class="kw">FROM</span> Transactions <span class="kw">WHERE</span> country = <span class="val">'France'</span>;
+
+<span class="com">-- TODO: Tunisia, Canada, Japan (6 more views)</span>
+<span class="val">___</span>
+
+<span class="com">-- TODO: Reconstruction JOIN for France</span>
+<span class="kw">SELECT</span> <span class="val">___</span>
+<span class="kw">FROM</span> Trans_FR_Financial fin
+<span class="kw">JOIN</span> Trans_FR_Management mgt <span class="kw">ON</span> <span class="val">___</span> = <span class="val">___</span>;</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- CITUS -->
+  <div id="frag-citus" class="tab-pane">
+    <h3 style="font-weight:700;margin-bottom:.8rem">Citus — How distribution works in practice</h3>
+    <p style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:1.2rem">Citus implements horizontal fragmentation automatically. You declare the distribution key — Citus creates shards and places them on workers.</p>
+    <div class="code-wrap">
+      <div class="code-bar"><span class="badge b-blue">init-cluster.sql — register workers + distribute</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+      <pre><span class="com">-- Step 1: Register the 3 workers in the coordinator</span>
+<span class="kw">SELECT</span> citus_add_node(<span class="val">'citus_worker1'</span>, <span class="num">5432</span>);
+<span class="kw">SELECT</span> citus_add_node(<span class="val">'citus_worker2'</span>, <span class="num">5432</span>);
+<span class="kw">SELECT</span> citus_add_node(<span class="val">'citus_worker3'</span>, <span class="num">5432</span>);
+
+<span class="com">-- Verify all 3 workers are active</span>
+<span class="kw">SELECT</span> nodeid, nodename, nodeport, isactive
+<span class="kw">FROM</span> pg_dist_node <span class="kw">ORDER BY</span> nodeid;
+
+<span class="com">-- Step 2: Distribute tables</span>
+<span class="kw">SELECT</span> create_distributed_table(<span class="val">'Patients'</span>,      <span class="val">'country'</span>);
+<span class="kw">SELECT</span> create_distributed_table(<span class="val">'TrainingData'</span>,  <span class="val">'siteOrigin'</span>);
+<span class="kw">SELECT</span> create_distributed_table(<span class="val">'MedicalRecords'</span>,<span class="val">'country'</span>);
+<span class="kw">SELECT</span> create_distributed_table(<span class="val">'Transactions'</span>,  <span class="val">'country'</span>);
+
+<span class="com">-- Step 3: Inspect shards</span>
+<span class="kw">SELECT</span> s.logicalrelid, s.shardid, p.nodename
+<span class="kw">FROM</span> pg_dist_shard s
+<span class="kw">JOIN</span> pg_dist_shard_placement p <span class="kw">ON</span> s.shardid = p.shardid
+<span class="kw">ORDER BY</span> s.logicalrelid, s.shardid;</pre>
+    </div>
+    <div class="ex-box" style="margin-top:1rem">
+      <div class="ex-num">EXERCISE 1.4</div>
+      <div class="ex-title">Inspect the shard distribution</div>
+      <div class="ex-desc">After running init-cluster.sql, query <code class="inline">pg_dist_shard</code> to find: how many shards does each table have? Which worker stores TrainingData rows from Tokyo?</div>
+      <textarea class="ex-input" placeholder="SELECT ... FROM pg_dist_shard ..."></textarea>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ PART 2 — REPLICATION ════════════════════════════════ -->
+<section id="part2">
+<div class="container">
+  <span class="sec-tag">Part 2</span>
+  <h2 class="sec-title">Replication &amp; Allocation</h2>
+  <p class="sec-desc">Replication keeps copies of data on multiple nodes to improve availability and read performance. Allocation decides which fragments go on which sites.</p>
+
+  <div class="grid2 reveal">
+    <div class="card">
+      <div style="font-weight:800;font-size:1.05rem;margin-bottom:1rem;color:var(--cyan)">Replication Factor</div>
+      <p style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:1.2rem">Citus replicates each shard across multiple workers. A replication factor of 2 means each shard exists on 2 different workers — if one fails, the other still serves the data.</p>
+      <div class="code-wrap">
+        <div class="code-bar"><span class="badge b-cyan">SQL</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+        <pre><span class="com">-- Set replication factor to 2</span>
+<span class="kw">SET</span> citus.shard_replication_factor = <span class="num">2</span>;
+
+<span class="com">-- Check current factor</span>
+<span class="kw">SHOW</span> citus.shard_replication_factor;
+
+<span class="com">-- See all shard placements</span>
+<span class="kw">SELECT</span> shardid, nodename, nodeport, shardstate
+<span class="kw">FROM</span> pg_dist_shard_placement
+<span class="kw">ORDER BY</span> shardid;</pre>
+      </div>
+      <div class="ex-box" style="margin-top:1rem">
+        <div class="ex-num">EXERCISE 2.1</div>
+        <div class="ex-title">Check shard placements</div>
+        <div class="ex-desc">Run the query above. How many placements does each shard have? What does <code class="inline">shardstate = 1</code> mean?</div>
+        <textarea class="ex-input" placeholder="My result:&#10;...&#10;&#10;shardstate = 1 means:&#10;..."></textarea>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-weight:800;font-size:1.05rem;margin-bottom:1rem;color:var(--orange)">Allocation Strategies</div>
+      <table style="margin-bottom:1rem">
+        <tr><th>Strategy</th><th>Description</th><th>Used in MediAI</th></tr>
+        <tr><td>Partitioned</td><td>Each fragment on exactly 1 site</td><td class="tick">TrainingData</td></tr>
+        <tr><td>Replicated</td><td>Each fragment on all sites</td><td class="tick">Schema (DDL)</td></tr>
+        <tr><td>Mixed</td><td>Hot data replicated, cold partitioned</td><td class="warn">Possible</td></tr>
+      </table>
+      <div class="ex-box">
+        <div class="ex-num">EXERCISE 2.2</div>
+        <div class="ex-title">Allocation decision</div>
+        <div class="ex-desc">For each table below, justify which allocation strategy is most appropriate for MediAI and why.</div>
+        <textarea class="ex-input" placeholder="Patients → strategy: ___ because ...&#10;TrainingData → strategy: ___ because ...&#10;MedicalRecords → strategy: ___ because ..."></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ PART 3 — DISTRIBUTED QUERIES ════════════════════════ -->
+<section id="part3" style="background:rgba(3,14,28,.6)">
+<div class="container">
+  <span class="sec-tag">Part 3</span>
+  <h2 class="sec-title">Distributed Queries</h2>
+  <p class="sec-desc">Write SQL queries that Citus transparently distributes across worker nodes. Use EXPLAIN to understand where each query runs and how results are merged.</p>
+
+  <div class="code-wrap reveal" style="margin-bottom:2rem">
+    <div class="code-bar"><span class="badge b-blue">Q1 — Full patient profile with medical records</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+    <pre><span class="com">-- Citus routes this to a single worker (co-located JOIN on country)</span>
+<span class="kw">SELECT</span>
+  p.name, p.age, p.city, p.country,
+  mr.date, mr.examType, mr.result,
+  mr.aiModelUsed, mr.aiScore
+<span class="kw">FROM</span> Patients p
+<span class="kw">JOIN</span> MedicalRecords mr
+  <span class="kw">ON</span> p.idPatient = mr.idPatient
+  <span class="kw">AND</span> p.country  = mr.country   <span class="com">← distribution key must match</span>
+<span class="kw">WHERE</span> p.name = <span class="val">'Mohamed Benali'</span>
+<span class="kw">ORDER BY</span> mr.date <span class="kw">DESC</span>;</pre>
+  </div>
+
+  <div class="grid2 reveal" style="margin-bottom:2rem">
+    <div class="ex-box">
+      <div class="ex-num">EXERCISE 3.1</div>
+      <div class="ex-title">Analyse the execution plan</div>
+      <div class="ex-desc">Run <code class="inline">EXPLAIN (VERBOSE)</code> on the query above. Answer: which worker(s) execute it? Why does co-locating <code class="inline">Patients</code> and <code class="inline">MedicalRecords</code> on the same <code class="inline">country</code> key avoid a cross-node JOIN?</div>
+      <textarea class="ex-input" placeholder="EXPLAIN (VERBOSE, FORMAT TEXT)&#10;SELECT p.name, mr.examType, mr.aiScore&#10;FROM Patients p JOIN MedicalRecords mr ..."></textarea>
+    </div>
+    <div class="ex-box">
+      <div class="ex-num">EXERCISE 3.2</div>
+      <div class="ex-title">AI model performance by site</div>
+      <div class="ex-desc">Write a query that returns, for each site and AI model, the number of exams and the average AI score — sorted by best average score first.</div>
+      <textarea class="ex-input" placeholder="SELECT p.siteOrigin, mr.aiModelUsed,&#10;  COUNT(*) AS nb_exams,&#10;  ROUND(AVG(mr.aiScore)::numeric, 4) AS avg_score&#10;FROM ..."></textarea>
+    </div>
+  </div>
+
+  <div class="ex-box reveal">
+    <div class="ex-num">EXERCISE 3.3</div>
+    <div class="ex-title">Write your own distributed query</div>
+    <div class="ex-desc">Write an original SQL query that joins at least 2 tables, uses an aggregation function (COUNT, AVG, SUM), and includes a filter on a non-distribution-key column. Explain the business question it answers.</div>
+    <textarea class="ex-input" placeholder="-- Business question: ...&#10;&#10;SELECT ...&#10;FROM ...&#10;JOIN ...&#10;WHERE ...&#10;GROUP BY ...;"></textarea>
+  </div>
+</div>
+</section>
+
+<!-- ══ PART 4 — 2PC ════════════════════════════════════════ -->
+<section id="part4">
+<div class="container">
+  <span class="sec-tag">Part 4</span>
+  <h2 class="sec-title">Distributed Transactions — 2PC</h2>
+  <p class="sec-desc">Two-Phase Commit (2PC) guarantees that a transaction spanning multiple nodes is either fully committed on ALL nodes or fully rolled back on ALL nodes — atomicity at scale.</p>
+
+  <!-- 2PC diagram -->
+  <div class="diagram-wrap reveal" style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2rem;margin-bottom:2rem">
+    <svg width="100%" viewBox="0 0 820 320">
+      <!-- Coordinator -->
+      <rect x="290" y="20" width="240" height="55" rx="12" fill="#0e2b52" stroke="#00eaff" stroke-width="1.5"/>
+      <text x="410" y="45" text-anchor="middle" fill="#00eaff" font-family="Sora" font-size="13" font-weight="800">COORDINATOR</text>
+      <text x="410" y="62" text-anchor="middle" fill="#5a9ec8" font-family="Space Mono" font-size="9">citus_master · manages 2PC</text>
+
+      <!-- Phase 1 label -->
+      <text x="40" y="115" fill="#ffbe3d" font-family="Sora" font-size="11" font-weight="700">PHASE 1</text>
+      <text x="40" y="130" fill="#5a9ec8" font-family="Space Mono" font-size="8">PREPARE</text>
+
+      <!-- Phase 1 arrows -->
+      <line x1="290" y1="75" x2="130" y2="135" stroke="#ffbe3d" stroke-width="1.5" marker-end="url(#a1)"/>
+      <line x1="410" y1="75" x2="410" y2="135" stroke="#ffbe3d" stroke-width="1.5" marker-end="url(#a1)"/>
+      <line x1="530" y1="75" x2="690" y2="135" stroke="#ffbe3d" stroke-width="1.5" marker-end="url(#a1)"/>
+      <text x="190" y="105" fill="#ffbe3d" font-family="Space Mono" font-size="8">PREPARE</text>
+      <text x="420" y="105" fill="#ffbe3d" font-family="Space Mono" font-size="8">PREPARE</text>
+      <text x="570" y="105" fill="#ffbe3d" font-family="Space Mono" font-size="8">PREPARE</text>
+
+      <!-- Workers phase 1 -->
+      <rect x="50"  y="135" width="160" height="50" rx="10" fill="#0a2040" stroke="#4db8ff" stroke-width="1.2"/>
+      <text x="130" y="158" text-anchor="middle" fill="#7ecfff" font-family="Sora" font-size="10" font-weight="700">Worker 1</text>
+      <text x="130" y="174" text-anchor="middle" fill="#5a9ec8" font-family="Space Mono" font-size="8">writes WAL log</text>
+      <rect x="330" y="135" width="160" height="50" rx="10" fill="#0a2040" stroke="#00d4b0" stroke-width="1.2"/>
+      <text x="410" y="158" text-anchor="middle" fill="#00d4b0" font-family="Sora" font-size="10" font-weight="700">Worker 2</text>
+      <text x="410" y="174" text-anchor="middle" fill="#5a9ec8" font-family="Space Mono" font-size="8">writes WAL log</text>
+      <rect x="610" y="135" width="160" height="50" rx="10" fill="#0a2040" stroke="#c084fc" stroke-width="1.2"/>
+      <text x="690" y="158" text-anchor="middle" fill="#c084fc" font-family="Sora" font-size="10" font-weight="700">Worker 3</text>
+      <text x="690" y="174" text-anchor="middle" fill="#5a9ec8" font-family="Space Mono" font-size="8">writes WAL log</text>
+
+      <!-- READY responses -->
+      <line x1="130" y1="185" x2="290" y2="220" stroke="#30f0a0" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#a1)"/>
+      <line x1="410" y1="185" x2="410" y2="220" stroke="#30f0a0" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#a1)"/>
+      <line x1="690" y1="185" x2="530" y2="220" stroke="#30f0a0" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#a1)"/>
+      <text x="185" y="210" fill="#30f0a0" font-family="Space Mono" font-size="8">READY ✓</text>
+      <text x="415" y="210" fill="#30f0a0" font-family="Space Mono" font-size="8">READY ✓</text>
+      <text x="565" y="210" fill="#30f0a0" font-family="Space Mono" font-size="8">READY ✓</text>
+
+      <!-- Phase 2 -->
+      <text x="40" y="245" fill="#4db8ff" font-family="Sora" font-size="11" font-weight="700">PHASE 2</text>
+      <text x="40" y="260" fill="#5a9ec8" font-family="Space Mono" font-size="8">COMMIT</text>
+      <rect x="290" y="220" width="240" height="40" rx="10" fill="rgba(77,184,255,.1)" stroke="#4db8ff" stroke-width="1.2"/>
+      <text x="410" y="238" text-anchor="middle" fill="#4db8ff" font-family="Sora" font-size="10" font-weight="700">All READY → send COMMIT</text>
+      <text x="410" y="252" text-anchor="middle" fill="#5a9ec8" font-family="Space Mono" font-size="8">If any ABORT → send ROLLBACK to all</text>
+      <line x1="290" y1="255" x2="130" y2="290" stroke="#4db8ff" stroke-width="1.5" marker-end="url(#a1)"/>
+      <line x1="410" y1="260" x2="410" y2="290" stroke="#4db8ff" stroke-width="1.5" marker-end="url(#a1)"/>
+      <line x1="530" y1="255" x2="690" y2="290" stroke="#4db8ff" stroke-width="1.5" marker-end="url(#a1)"/>
+      <text x="100" y="285" fill="#4db8ff" font-family="Space Mono" font-size="8">COMMIT</text>
+      <text x="380" y="285" fill="#4db8ff" font-family="Space Mono" font-size="8">COMMIT</text>
+      <text x="650" y="285" fill="#4db8ff" font-family="Space Mono" font-size="8">COMMIT</text>
+      <text x="120" y="310" text-anchor="middle" fill="#30f0a0" font-family="Space Mono" font-size="8">✓ committed</text>
+      <text x="410" y="310" text-anchor="middle" fill="#30f0a0" font-family="Space Mono" font-size="8">✓ committed</text>
+      <text x="700" y="310" text-anchor="middle" fill="#30f0a0" font-family="Space Mono" font-size="8">✓ committed</text>
+    </svg>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('tpc-theory','t4')">Theory Question</button>
+    <button class="tab" onclick="showTab('tpc-sql','t4')">SQL Simulation</button>
+    <button class="tab" onclick="showTab('tpc-fail','t4')">Failure Scenarios</button>
+  </div>
+
+  <div id="tpc-theory" class="tab-pane active" style="padding-top:1.4rem">
+    <div class="ex-box">
+      <div class="ex-num">EXERCISE 4.1</div>
+      <div class="ex-title">Explain 2PC in your own words</div>
+      <div class="ex-desc">Describe Phase 1 (Prepare) and Phase 2 (Commit) in your own words. What happens if Worker 2 responds ABORT in Phase 1? Why is 2PC called a "blocking protocol"?</div>
+      <textarea class="ex-input" placeholder="Phase 1 (Prepare):&#10;...&#10;&#10;Phase 2 (Commit):&#10;...&#10;&#10;If a worker responds ABORT:&#10;...&#10;&#10;Why 'blocking':&#10;..."></textarea>
+    </div>
+  </div>
+
+  <div id="tpc-sql" class="tab-pane" style="padding-top:1.4rem">
+    <div class="info-box ib-blue" style="margin-bottom:1.2rem">
+      <h4>Scenario</h4>
+      <p>Patient Yuki Tanaka (Tokyo) has an emergency consultation in Paris. Two operations must be atomic: create a medical record on the Tokyo worker AND charge a transaction on the France worker.</p>
+    </div>
+    <div class="code-wrap">
+      <div class="code-bar"><span class="badge b-blue">SQL — 2PC with PREPARE TRANSACTION</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+      <pre><span class="com">-- Phase 1: open transaction and prepare it</span>
+<span class="kw">BEGIN</span>;
+
+<span class="kw">INSERT INTO</span> MedicalRecords
+  (idPatient, country, date, examType, result, aiModelUsed, aiScore, aiVersion)
+<span class="kw">VALUES</span>
+  (<span class="num">16</span>, <span class="val">'Japan'</span>, NOW()::<span class="fn">DATE</span>, <span class="val">'Emergency consultation'</span>,
+   <span class="val">'General check — patient travelling'</span>, <span class="val">'DiagNet-3'</span>, <span class="num">0.8934</span>, <span class="val">'v3.2'</span>);
+
+<span class="kw">INSERT INTO</span> Transactions
+  (idPatient, country, date, type, amount, currency, status)
+<span class="kw">VALUES</span>
+  (<span class="num">16</span>, <span class="val">'Japan'</span>, NOW(), <span class="val">'consultation'</span>, <span class="num">15000</span>, <span class="val">'JPY'</span>, <span class="val">'pending'</span>);
+
+<span class="kw">PREPARE TRANSACTION</span> <span class="val">'mediAI_emergency_yuki_001'</span>;
+
+<span class="com">-- Check the prepared transaction is waiting</span>
+<span class="kw">SELECT</span> gid, prepared, owner, database
+<span class="kw">FROM</span> pg_prepared_xacts;
+
+<span class="com">-- Phase 2a: all workers ready → COMMIT</span>
+<span class="kw">COMMIT PREPARED</span> <span class="val">'mediAI_emergency_yuki_001'</span>;
+
+<span class="com">-- Phase 2b: simulate failure → ROLLBACK</span>
+<span class="com">-- ROLLBACK PREPARED 'mediAI_emergency_yuki_001';</span></pre>
+    </div>
+    <div class="ex-box" style="margin-top:1rem">
+      <div class="ex-num">EXERCISE 4.2</div>
+      <div class="ex-title">Run and observe the 2PC</div>
+      <div class="ex-desc">Execute the PREPARE TRANSACTION block. Then run the <code class="inline">pg_prepared_xacts</code> query. What does the <code class="inline">gid</code> field contain? Then COMMIT the transaction and verify the data was inserted correctly.</div>
+      <textarea class="ex-input" placeholder="gid field contains: ...&#10;&#10;After COMMIT, verification query:&#10;SELECT ... FROM MedicalRecords WHERE idPatient = 16;&#10;&#10;Result:&#10;..."></textarea>
+    </div>
+  </div>
+
+  <div id="tpc-fail" class="tab-pane" style="padding-top:1.4rem">
+    <div class="grid2">
+      <div class="ex-box">
+        <div class="ex-num">EXERCISE 4.3a</div>
+        <div class="ex-title">Simulate a worker failure</div>
+        <div class="ex-desc">Start a transaction, prepare it, then stop a worker. What happens when you try to COMMIT? How does 2PC protect data integrity in this case?</div>
+        <div class="code-wrap">
+          <div class="code-bar"><span class="badge b-red">Simulate failure</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+          <pre><span class="com"># In a SEPARATE terminal:</span>
+docker stop citus_worker3
+
+<span class="com"># Back in psql — try to commit:</span>
+<span class="kw">COMMIT PREPARED</span> <span class="val">'your_txn_id'</span>;
+<span class="com"># Observe the error message</span>
+
+<span class="com"># Restart the worker:</span>
+docker start citus_worker3</pre>
+        </div>
+        <textarea class="ex-input" placeholder="Error message observed:&#10;...&#10;&#10;What 2PC protects against:&#10;..."></textarea>
+      </div>
+      <div class="ex-box">
+        <div class="ex-num">EXERCISE 4.3b</div>
+        <div class="ex-title">2PC limitations</div>
+        <div class="ex-desc">Answer these 3 questions in your own words:</div>
+        <div style="color:var(--muted);font-size:.85rem;line-height:1.8;margin-bottom:.8rem">
+          1. What happens if the <strong>coordinator itself</strong> crashes between Phase 1 and Phase 2?<br>
+          2. Why is 2PC called "blocking"?<br>
+          3. Name one alternative to 2PC used in high-availability systems.
+        </div>
+        <textarea class="ex-input" placeholder="1. If coordinator crashes between phases:&#10;...&#10;&#10;2. Why blocking:&#10;...&#10;&#10;3. One alternative:&#10;..."></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ SUBMIT ══════════════════════════════════════════════ -->
+<section id="submit" style="background:rgba(3,14,28,.8)">
+<div class="container">
+  <span class="sec-tag">Submission</span>
+  <h2 class="sec-title">How to Submit Your Work</h2>
+  <p class="sec-desc">No email. No PDF. Your GitHub repository is your submission. Every commit you push is timestamped and visible to the professor.</p>
+
+  <div class="grid2 reveal" style="margin-bottom:2.5rem">
+    <div class="card" style="border-color:rgba(0,234,255,.35)">
+      <div style="font-weight:800;font-size:1.05rem;margin-bottom:1.2rem;color:var(--cyan)">📁 What to submit</div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--cyan)"></div>
+          <div class="tl-title">exercises/01-TP-Pratique-...MediAI.md</div>
+          <div class="tl-desc">The main exercise file — with all your SQL queries written in the answer blocks and results copy-pasted from psql as plain text.</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--cyan)"></div>
+          <div class="tl-title">Any additional .sql files you created</div>
+          <div class="tl-desc">If you wrote extra scripts for fragmentation views or your own queries — include them in the <code class="inline">data/</code> folder.</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot" style="border-color:var(--red)"></div>
+          <div class="tl-title" style="color:var(--red)">❌ No screenshots</div>
+          <div class="tl-desc">Copy-paste your psql output as text into the .md file. Screenshots cannot be verified and are not accepted.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="border-color:rgba(48,240,160,.35)">
+      <div style="font-weight:800;font-size:1.05rem;margin-bottom:1.2rem;color:var(--green)">✍️ How to write answers</div>
+      <div class="code-wrap">
+        <div class="code-bar"><span class="badge b-green">Example</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+        <pre><span class="com">### Exercise 3.2 — AI model performance</span>
+
+<span class="str">**My query:**</span>
+```sql
+SELECT p.siteOrigin, mr.aiModelUsed,
+  COUNT(*) AS nb_exams,
+  ROUND(AVG(mr.aiScore)::numeric,4)
+FROM MedicalRecords mr
+JOIN Patients p ON ...
+GROUP BY ...
+ORDER BY avg_score DESC;
+```
+
+<span class="str">**Result from psql:**</span>
+```
+ siteOrigin | aiModelUsed  | nb_exams | avg_score
+------------+--------------+----------+-----------
+ Tunis      | NephroAI-1   |        2 |    0.9812
+ Paris      | DiagNet-3    |        1 |    0.9812
+ ...
+```</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Git commands -->
+  <div class="code-wrap reveal">
+    <div class="code-bar"><span class="badge b-green">Git workflow — commit after each part</span><div class="dots"><i style="background:#ff6b78"></i><i style="background:#ffbe3d"></i><i style="background:#30f0a0"></i></div></div>
+    <pre><span class="com"># After Part 1 — Fragmentation</span>
+git add .
+git commit -m <span class="val">"Part 1 done – horizontal, vertical, hybrid fragmentation"</span>
+git push
+
+<span class="com"># After Part 2 — Replication</span>
+git add .
+git commit -m <span class="val">"Part 2 done – replication and allocation analysis"</span>
+git push
+
+<span class="com"># After Part 3 — Distributed Queries</span>
+git add .
+git commit -m <span class="val">"Part 3 done – distributed SQL queries with EXPLAIN"</span>
+git push
+
+<span class="com"># After Part 4 — 2PC</span>
+git add .
+git commit -m <span class="val">"Part 4 done – 2PC simulation and failure scenarios"</span>
+git push
+
+<span class="com"># FINAL submission</span>
+git add .
+git commit -m <span class="val">"FINAL SUBMISSION – all parts completed"</span>
+git push
+
+<span class="com"># ✓ Your last push before the deadline = your submission</span></pre>
+  </div>
+
+  <!-- Reflection -->
+  <div class="card reveal" style="margin-top:2rem;border-color:rgba(192,132,252,.4)">
+    <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:1.2rem">
+      <span style="font-size:1.9rem">🧠</span>
+      <div>
+        <div style="font-weight:800;font-size:1.05rem">Mandatory Reflection Questions</div>
+        <div style="color:var(--muted);font-size:.85rem">Answer at the end of your .md file — in your own words. Cannot be copy-pasted.</div>
+      </div>
+    </div>
+    <div class="grid2" style="gap:1rem">
+      <div style="background:rgba(192,132,252,.07);border:1px solid rgba(192,132,252,.2);border-radius:12px;padding:1.1rem">
+        <div style="color:var(--purple);font-weight:700;margin-bottom:.4rem;font-size:.88rem">Q1 — Difficulty</div>
+        <p style="color:var(--muted);font-size:.85rem;line-height:1.6">What was the hardest part of this lab? Describe one specific error you encountered and how you solved it. (min 3 sentences)</p>
+      </div>
+      <div style="background:rgba(192,132,252,.07);border:1px solid rgba(192,132,252,.2);border-radius:12px;padding:1.1rem">
+        <div style="color:var(--purple);font-weight:700;margin-bottom:.4rem;font-size:.88rem">Q2 — Fragmentation</div>
+        <p style="color:var(--muted);font-size:.85rem;line-height:1.6">In your own words — without the course slides — explain the difference between horizontal and vertical fragmentation. Give a concrete MediAI example for each.</p>
+      </div>
+      <div style="background:rgba(192,132,252,.07);border:1px solid rgba(192,132,252,.2);border-radius:12px;padding:1.1rem">
+        <div style="color:var(--purple);font-weight:700;margin-bottom:.4rem;font-size:.88rem">Q3 — Co-location</div>
+        <p style="color:var(--muted);font-size:.85rem;line-height:1.6">Why does Citus distribute <code class="inline">Patients</code> and <code class="inline">MedicalRecords</code> using the same key (<code class="inline">country</code>)? What would happen to JOIN performance if they used different keys?</p>
+      </div>
+      <div style="background:rgba(192,132,252,.07);border:1px solid rgba(192,132,252,.2);border-radius:12px;padding:1.1rem">
+        <div style="color:var(--purple);font-weight:700;margin-bottom:.4rem;font-size:.88rem">Q4 — 2PC in practice</div>
+        <p style="color:var(--muted);font-size:.85rem;line-height:1.6">In a real hospital, a patient record creation and its billing must be atomic. Is 2PC the right choice? What are the trade-offs in terms of availability vs consistency?</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules box -->
+  <div class="info-box ib-cyan reveal" style="margin-top:2rem;border-radius:16px;padding:1.5rem 1.8rem">
+    <h4 style="font-size:1rem;margin-bottom:.6rem">📌 Submission Rules</h4>
+    <p style="line-height:2">
+      ✅ &nbsp;Your <strong>last git push before the deadline</strong> is your submission.<br>
+      ✅ &nbsp;Push after each part — progressive commits show real work.<br>
+      ✅ &nbsp;Paste psql results as <strong>plain text</strong> — no screenshots.<br>
+      ✅ &nbsp;Answer all 4 reflection questions in your own words.<br>
+      ❌ &nbsp;Do not modify the <code class="inline">solutions/</code> folder — modifications are tracked.<br>
+      ❌ &nbsp;One commit at 23:58 with everything done = suspicious — commit progressively.
+    </p>
+  </div>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="f-logo">⬡ MediAI · DISTRIBUTED DATABASES LAB</div>
+  <p>Chapter 2 · ENSTA Paris 3A — AI & Health Systems · Citus + PostgreSQL · 4 geographic sites</p>
+</footer>
+
+</div>
+
+<script>
+// Step navigation
+function goStep(n){
+  for(let i=1;i<=6;i++){const el=document.getElementById('s'+i);if(el)el.classList.toggle('active',i===n)}
+  document.querySelectorAll('.step-btn').forEach((b,i)=>{
+    b.classList.toggle('active',i===n-1);
+    if(i<n-1)b.classList.add('done'); else b.classList.remove('done');
+  });
+  document.getElementById('setup')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// Tabs
+function showTab(id,group){
+  const pane=document.getElementById(id);
+  if(!pane)return;
+  const parent=pane.parentElement;
+  parent.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  pane.classList.add('active');
+  const tabBar=parent.previousElementSibling;
+  if(tabBar&&tabBar.classList.contains('tabs')){
+    tabBar.querySelectorAll('.tab').forEach(t=>{
+      t.classList.toggle('active',t.getAttribute('onclick')&&t.getAttribute('onclick').includes(id));
+    });
+  }
+}
+
+// Accordion
+function toggleAccord(h){h.parentElement.classList.toggle('open')}
+
+// Nav active
+const secs=document.querySelectorAll('section[id]');
+const navAs=document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  secs.forEach(s=>{if(window.scrollY>=s.offsetTop-80)cur=s.id});
+  navAs.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+cur));
+});
+
+// Reveal on scroll
+const revEls=document.querySelectorAll('.reveal');
+new IntersectionObserver(ents=>{ents.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')})},{threshold:.07})
+  .observe(...revEls); // wrong API, fix:
+const ro=new IntersectionObserver(ents=>ents.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')}),{threshold:.07});
+revEls.forEach(el=>ro.observe(el));
+</script>
+</body>
+</html>
